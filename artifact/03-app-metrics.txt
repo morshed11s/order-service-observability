@@ -1,0 +1,99 @@
+
+$ curl -s -i http://127.0.0.1:8000/health
+HTTP/1.1 200 OK
+Server: gunicorn
+Date: Tue, 10 Nov 2026 08:36:23 GMT
+Connection: keep-alive
+Content-Type: application/json
+Content-Length: 34
+X-Request-ID: 4358c6292c1c
+
+{"status":"ok","version":"1.0.0"}
+
+$ curl -s -i -X POST http://127.0.0.1:8000/api/orders -H Content-Type: application/json -d {"product":"gadget","quantity":2}
+HTTP/1.1 201 CREATED
+Server: gunicorn
+Date: Tue, 10 Nov 2026 08:36:23 GMT
+Connection: keep-alive
+Content-Type: application/json
+Content-Length: 75
+X-Request-ID: d2ef0d3b6f98
+
+{"order_id":"f2cd9c035c","product":"gadget","quantity":2,"value_usd":49.0}
+
+$ curl -s -i -X POST http://127.0.0.1:8000/api/orders?simulate=error -H Content-Type: application/json -d {"product":"gadget"}
+HTTP/1.1 500 INTERNAL SERVER ERROR
+Server: gunicorn
+Date: Tue, 10 Nov 2026 08:36:24 GMT
+Connection: keep-alive
+Content-Type: application/json
+Content-Length: 48
+X-Request-ID: 40e09f68488f
+
+{"error":"order processing failed (simulated)"}
+
+$ curl -s -i -X POST http://127.0.0.1:8000/api/orders -H Content-Type: application/json -d {"product":"widget","quantity":0}
+HTTP/1.1 400 BAD REQUEST
+Server: gunicorn
+Date: Tue, 10 Nov 2026 08:36:24 GMT
+Connection: keep-alive
+Content-Type: application/json
+Content-Length: 58
+X-Request-ID: de7e4576f84f
+
+{"error":"quantity must be an integer between 1 and 100"}
+
+$ curl -s http://127.0.0.1:8000/metrics | grep -E "^(http_|orders_)"
+http_requests_total{endpoint="/health",method="GET",status="200"} 5.0
+http_requests_total{endpoint="/api/orders",method="POST",status="201"} 1.0
+http_requests_total{endpoint="/api/orders",method="POST",status="500"} 1.0
+http_requests_total{endpoint="/api/orders",method="POST",status="400"} 1.0
+http_requests_created{endpoint="/health",method="GET",status="200"} 1.7942997156287518e+09
+http_requests_created{endpoint="/api/orders",method="POST",status="201"} 1.794299783992909e+09
+http_requests_created{endpoint="/api/orders",method="POST",status="500"} 1.7942997841423748e+09
+http_requests_created{endpoint="/api/orders",method="POST",status="400"} 1.794299784176175e+09
+http_request_duration_seconds_bucket{endpoint="/health",le="0.005",method="GET"} 5.0
+http_request_duration_seconds_bucket{endpoint="/health",le="0.01",method="GET"} 5.0
+http_request_duration_seconds_bucket{endpoint="/health",le="0.025",method="GET"} 5.0
+http_request_duration_seconds_bucket{endpoint="/health",le="0.05",method="GET"} 5.0
+http_request_duration_seconds_bucket{endpoint="/health",le="0.1",method="GET"} 5.0
+http_request_duration_seconds_bucket{endpoint="/health",le="0.25",method="GET"} 5.0
+http_request_duration_seconds_bucket{endpoint="/health",le="0.5",method="GET"} 5.0
+http_request_duration_seconds_bucket{endpoint="/health",le="1.0",method="GET"} 5.0
+http_request_duration_seconds_bucket{endpoint="/health",le="2.5",method="GET"} 5.0
+http_request_duration_seconds_bucket{endpoint="/health",le="5.0",method="GET"} 5.0
+http_request_duration_seconds_bucket{endpoint="/health",le="+Inf",method="GET"} 5.0
+http_request_duration_seconds_count{endpoint="/health",method="GET"} 5.0
+http_request_duration_seconds_sum{endpoint="/health",method="GET"} 0.00435741999945094
+http_request_duration_seconds_bucket{endpoint="/api/orders",le="0.005",method="POST"} 1.0
+http_request_duration_seconds_bucket{endpoint="/api/orders",le="0.01",method="POST"} 1.0
+http_request_duration_seconds_bucket{endpoint="/api/orders",le="0.025",method="POST"} 1.0
+http_request_duration_seconds_bucket{endpoint="/api/orders",le="0.05",method="POST"} 1.0
+http_request_duration_seconds_bucket{endpoint="/api/orders",le="0.1",method="POST"} 2.0
+http_request_duration_seconds_bucket{endpoint="/api/orders",le="0.25",method="POST"} 3.0
+http_request_duration_seconds_bucket{endpoint="/api/orders",le="0.5",method="POST"} 3.0
+http_request_duration_seconds_bucket{endpoint="/api/orders",le="1.0",method="POST"} 3.0
+http_request_duration_seconds_bucket{endpoint="/api/orders",le="2.5",method="POST"} 3.0
+http_request_duration_seconds_bucket{endpoint="/api/orders",le="5.0",method="POST"} 3.0
+http_request_duration_seconds_bucket{endpoint="/api/orders",le="+Inf",method="POST"} 3.0
+http_request_duration_seconds_count{endpoint="/api/orders",method="POST"} 3.0
+http_request_duration_seconds_sum{endpoint="/api/orders",method="POST"} 0.18639598600066165
+http_request_duration_seconds_created{endpoint="/health",method="GET"} 1.79429971562858e+09
+http_request_duration_seconds_created{endpoint="/api/orders",method="POST"} 1.794299783992829e+09
+http_requests_in_progress 1.0
+orders_created_total{product="widget"} 0.0
+orders_created_total{product="gadget"} 1.0
+orders_created_total{product="gizmo"} 0.0
+orders_created_created{product="widget"} 1.7942997123832705e+09
+orders_created_created{product="gadget"} 1.794299712383307e+09
+orders_created_created{product="gizmo"} 1.7942997123833332e+09
+orders_value_usd_total 49.0
+orders_value_usd_created 1.7942997123831131e+09
+orders_failed_total{reason="validation"} 1.0
+orders_failed_total{reason="unknown_product"} 0.0
+orders_failed_total{reason="simulated_error"} 1.0
+orders_failed_total{reason="internal_error"} 0.0
+orders_failed_created{reason="validation"} 1.794299712383358e+09
+orders_failed_created{reason="unknown_product"} 1.7942997123833854e+09
+orders_failed_created{reason="simulated_error"} 1.7942997123834143e+09
+orders_failed_created{reason="internal_error"} 1.7942997123834362e+09

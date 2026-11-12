@@ -1,0 +1,96 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: order-api
+    folder: Observability
+    interval: 30s
+    rules:
+      - uid: order-api-target-down
+        title: Order API scrape target down
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              # 0 instead of no data when the target is gone
+              expr: sum(up{job="order-api"}) or vector(0)
+              instant: true
+              intervalMs: 15000
+              maxDataPoints: 43200
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              expression: A
+              reducer: last
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: lt, params: [1] }
+        noDataState: Alerting
+        execErrState: Error
+        for: 1m
+        labels:
+          severity: critical
+          service: order-api
+        annotations:
+          summary: Prometheus cannot scrape the Order API (up < 1 for 1 minute).
+          description: >-
+            The order-api job has had no healthy scrape target for at least one minute.
+            The API is down or unreachable, so orders cannot be placed.
+          runbook: >-
+            1) docker compose ps order-api  2) docker compose logs --tail=100 order-api
+            3) curl -s http://127.0.0.1:8000/health  4) docker compose up -d order-api
+
+      - uid: order-api-high-error-rate
+        title: Order API high 5xx error rate
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: >-
+                (sum(rate(http_requests_total{job="order-api",status=~"5.."}[2m])) or vector(0))
+                / clamp_min(sum(rate(http_requests_total{job="order-api"}[2m])), 0.001)
+              instant: true
+              intervalMs: 15000
+              maxDataPoints: 43200
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              expression: A
+              reducer: last
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [0.05] }
+        noDataState: OK
+        execErrState: Error
+        for: 2m
+        labels:
+          severity: warning
+          service: order-api
+        annotations:
+          summary: More than 5% of Order API requests are failing with HTTP 5xx.
+          description: >-
+            The 5xx ratio over the last 2 minutes has stayed above 5% for 2 minutes.
+          runbook: >-
+            Check the "Error rate" and "Order failures by reason" panels, then
+            docker compose logs order-api | grep '"level": "ERROR"'. Roll back recent
+            changes or set APP_FAILURE_RATE=0 if a failure test was left running.

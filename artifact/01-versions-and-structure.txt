@@ -1,0 +1,103 @@
+
+$ lsb_release -a
+No LSB modules are available.
+Distributor ID:	Ubuntu
+Description:	Ubuntu 22.04.5 LTS
+Release:	22.04
+Codename:	jammy
+
+$ uname -r
+5.15.0-202-generic
+
+$ docker version --format Docker Engine {{.Server.Version}}
+Docker Engine 29.9.3
+
+$ docker compose version
+Docker Compose version v5.7.0
+
+$ microk8s version
+MicroK8s v1.31.14 revision 8565
+
+$ microk8s status --wait-ready
+microk8s is running
+high-availability: no
+  datastore master nodes: 127.0.0.1:19001
+  datastore standby nodes: none
+addons:
+  enabled:
+    dns                  # (core) CoreDNS
+    ha-cluster           # (core) Configure high availability on the current node
+    helm                 # (core) Helm - the package manager for Kubernetes
+    helm3                # (core) Helm 3 - the package manager for Kubernetes
+    hostpath-storage     # (core) Storage class; allocates storage from host directory
+    metrics-server       # (core) K8s Metrics Server for API access to service metrics
+    storage              # (core) Alias to hostpath-storage add-on, deprecated
+  disabled:
+    cert-manager         # (core) Cloud native certificate management
+    cis-hardening        # (core) Apply CIS K8s hardening
+    community            # (core) The community addons repository
+    dashboard            # (core) The Kubernetes dashboard
+    gpu                  # (core) Alias to nvidia add-on
+    host-access          # (core) Allow Pods connecting to Host services smoothly
+    ingress              # (core) Ingress controller for external access
+    kube-ovn             # (core) An advanced network fabric for Kubernetes
+    mayastor             # (core) OpenEBS MayaStor
+    metallb              # (core) Loadbalancer for your Kubernetes cluster
+    minio                # (core) MinIO object storage
+    nvidia               # (core) NVIDIA hardware (GPU and network) support
+    observability        # (core) A lightweight observability stack for logs, traces and metrics
+    prometheus           # (core) Prometheus operator for monitoring and logging
+    rbac                 # (core) Role-Based Access Control for authorisation
+    registry             # (core) Private image registry exposed on localhost:32000
+    rook-ceph            # (core) Distributed Ceph storage using Rook
+
+$ microk8s kubectl version
+Client Version: v1.31.14
+Kustomize Version: v5.4.2
+Server Version: v1.31.14
+
+$ microk8s helm3 version
+version.BuildInfo{Version:"v3.14.4+unreleased", GitCommit:"007e7983e43aeb4aebf1d707d0b2fb791faf0bb5", GitTreeState:"clean", GoVersion:"go1.21.13"}
+
+$ find . ( -path ./.git -o -path ./app/.venv -o -path ./app/.pytest_cache -o -name __pycache__ ) -prune -o -type f ! -name .env -print
+./loki/config.yml
+./.env.example
+./docs/promql.md
+./README.md
+./prometheus/prometheus.yml
+./alerting/configuration-notes.md
+./grafana/dashboards/observability-metrics.json
+./grafana/dashboards/kubernetes-logs.json
+./grafana/provisioning/alerting/rules.yaml
+./grafana/provisioning/alerting/policies.yaml
+./grafana/provisioning/alerting/contact-points.yaml
+./grafana/provisioning/dashboards/dashboards.yaml
+./grafana/provisioning/datasources/datasources.yaml
+./kubernetes/workload.yaml
+./kubernetes/namespace.yaml
+./kubernetes/alloy-values.yaml
+./.gitignore
+./scripts/collect-artifact.sh
+./scripts/cleanup.sh
+./scripts/k8s-error-test.sh
+./scripts/traffic-test.sh
+./scripts/deploy-k8s.sh
+./scripts/promql-checks.sh
+./scripts/setup-ubuntu.sh
+./artifact/README.md
+./artifact/05-kubernetes.txt
+./artifact/01-versions-and-structure.txt
+./artifact/traffic-before-after.txt
+./artifact/05-loki-query.txt
+./artifact/04-promql-and-crosschecks.txt
+./artifact/07-alerting.txt
+./artifact/02-compose.txt
+./artifact/03-app-metrics.txt
+./.gitattributes
+./app/requirements-dev.txt
+./app/requirements.txt
+./app/Dockerfile
+./app/tests/test_app.py
+./app/app.py
+./app/.dockerignore
+./compose.yaml

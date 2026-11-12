@@ -1,0 +1,19 @@
+# Secrets
+.env
+*.env
+!.env.example
+secrets/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# Local artefacts
+*.zip
+*.log
+.vagrant/
+.idea/
+.vscode/

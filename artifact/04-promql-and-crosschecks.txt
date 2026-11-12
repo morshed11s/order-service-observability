@@ -1,0 +1,30 @@
+== Prometheus targets ==
+node-exporter  up  http://172.30.0.1:9100/metrics
+order-api      up  http://order-api:8000/metrics
+prometheus     up  http://localhost:9090/metrics
+
+== Required PromQL expressions ==
+CPU %                      47.92474412370481 100 * (1 - avg(rate(node_cpu_seconds_total{job="node-exporter",mode="idle"}[5m])))
+RAM %                      28.557970961909028 100 * (1 - node_memory_MemAvailable_bytes{job="node-exporter"} / node_memory_MemTotal_bytes{job="node-exporter"})
+Requests/second            0.044447407604951444 sum(rate(http_requests_total{job="order-api"}[1m]))
+5xx error ratio            0              (sum(rate(http_requests_total{job="order-api",status=~"5.."}[5m])) or vector(0)) / clamp_min(sum(rate(http_requests_total{job="order-api"}[5m])), 0.001)
+p95 latency (s)            0.004750000000000001 histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job="order-api"}[5m])))
+
+== Extra host readings ==
+Disk / used %              29.289428076256495 100 * (1 - node_filesystem_avail_bytes{job="node-exporter",mountpoint="/"} / node_filesystem_size_bytes{job="node-exporter",mountpoint="/"})
+Uptime (s)                 2420.1419999599457 time() - node_boot_time_seconds{job="node-exporter"}
+Load 1m                    4.54           node_load1{job="node-exporter"}
+Orders created             0              sum(orders_created_total{job="order-api"})
+
+== Cross-check 1: RAM (free) ==
+free:        total=6209007616 available=4443521024  -> used%=28.43
+prometheus:  total=6209007616 available=4435841024
+
+== Cross-check 2: root filesystem (df) ==
+df:          size=41555521536 avail=29384114176  use%=30% (df rounds up; used/(used+avail))
+prometheus:  size=41555521536 avail=29384146944
+
+== Cross-check 3: uptime / load ==
+uptime:       08:36:26 up 40 min,  1 user,  load average: 4.25, 2.99, 3.45
+/proc:       uptime_s=2420.94  loadavg=4.25 2.99 3.45
+prometheus:  uptime_s=2421.1689999103546 load1=4.54

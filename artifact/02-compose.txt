@@ -1,0 +1,41 @@
+
+$ docker compose config --quiet
+compose config: valid
+
+$ docker compose ps
+NAME                            IMAGE                           COMMAND                  SERVICE         CREATED       STATUS                        PORTS
+observability-grafana-1         grafana/grafana:12.0.2          "/run.sh"                grafana         2 hours ago   Up About a minute             127.0.0.1:3000->3000/tcp
+observability-loki-1            grafana/loki:3.5.1              "/usr/bin/loki -conf…"   loki            2 hours ago   Up About a minute             127.0.0.1:3100->3100/tcp
+observability-node-exporter-1   prom/node-exporter:v1.9.1       "/bin/node_exporter …"   node-exporter   2 hours ago   Up About a minute             
+observability-order-api-1       observability/order-api:1.0.0   "gunicorn --bind 0.0…"   order-api       2 hours ago   Up About a minute (healthy)   127.0.0.1:8000->8000/tcp
+observability-prometheus-1      prom/prometheus:v3.4.1          "/bin/prometheus --c…"   prometheus      2 hours ago   Up About a minute             127.0.0.1:9090->9090/tcp
+
+$ docker volume ls --filter name=observability
+DRIVER    VOLUME NAME
+local     observability_grafana_data
+local     observability_loki_data
+local     observability_prometheus_data
+
+$ ss -tlnp
+State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess
+LISTEN 0      4096       127.0.0.1:3000       0.0.0.0:*          
+LISTEN 0      4096       127.0.0.1:19001      0.0.0.0:*          
+LISTEN 0      4096       127.0.0.1:10256      0.0.0.0:*          
+LISTEN 0      4096       127.0.0.1:10248      0.0.0.0:*          
+LISTEN 0      4096       127.0.0.1:10249      0.0.0.0:*          
+LISTEN 0      4096   127.0.0.53%lo:53         0.0.0.0:*          
+LISTEN 0      128          0.0.0.0:22         0.0.0.0:*          
+LISTEN 0      4096       127.0.0.1:8000       0.0.0.0:*          
+LISTEN 0      4096      172.30.0.1:9100       0.0.0.0:*          
+LISTEN 0      4096       127.0.0.1:3100       0.0.0.0:*          
+LISTEN 0      4096       127.0.0.1:9099       0.0.0.0:*          
+LISTEN 0      4096       127.0.0.1:9090       0.0.0.0:*          
+LISTEN 0      4096       127.0.0.1:37105      0.0.0.0:*          
+LISTEN 0      4096       127.0.0.1:1338       0.0.0.0:*          
+LISTEN 0      128             [::]:22            [::]:*          
+LISTEN 0      4096               *:16443            *:*          
+LISTEN 0      4096               *:12345            *:*          
+LISTEN 0      4096               *:25000            *:*          
+LISTEN 0      4096               *:10250            *:*          
+LISTEN 0      4096               *:10259            *:*          
+LISTEN 0      4096               *:10257            *:*          

@@ -1,0 +1,11 @@
+$ Grafana alert rules (provisioned)
+order-api-target-down	Order API scrape target down	for=1m
+order-api-high-error-rate	Order API high 5xx error rate	for=2m
+
+$ Contact points (credentials are never returned)
+{"name":"email receiver","type":"email","addresses":"<hidden>"}
+{"name":"email-oncall","type":"email","addresses":"<hidden>"}
+
+$ Current alert instances
+2026-11-10T08:28:00Z	Normal	Order API high 5xx error rate
+2026-11-10T08:35:30Z	Normal	Order API scrape target down

@@ -1,0 +1,97 @@
+# fake order worker, INFO to stdout and WARN/ERROR to stderr
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: order-worker-script
+  namespace: orders-demo
+data:
+  worker.py: |
+    import json, os, random, signal, socket, sys, time, uuid
+
+    POD = os.getenv("POD_NAME", socket.gethostname())
+    LOOP = float(os.getenv("LOOP_SECONDS", "2"))
+    ERROR_RATE = float(os.getenv("ERROR_RATE", "0.1"))
+    WARN_RATE = float(os.getenv("WARN_RATE", "0.1"))
+    PRODUCTS = ["widget", "gadget", "gizmo"]
+    running = True
+
+    def stop(*_):
+        global running
+        running = False
+    signal.signal(signal.SIGTERM, stop)
+
+    def emit(stream, level, event, **fields):
+        line = {"ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "level": level,
+                "event": event, "pod": POD, **fields}
+        print(json.dumps(line), file=stream, flush=True)
+
+    emit(sys.stdout, "INFO", "worker_started", error_rate=ERROR_RATE, loop_seconds=LOOP)
+    processed = failed = 0
+    while running:
+        order_id = uuid.uuid4().hex[:10]
+        product = random.choice(PRODUCTS)
+        emit(sys.stdout, "INFO", "order_picked", order_id=order_id, product=product)
+        if random.random() < WARN_RATE:
+            emit(sys.stderr, "WARN", "warehouse_slow", order_id=order_id,
+                 latency_ms=random.randint(800, 2500))
+        if random.random() < ERROR_RATE:
+            failed += 1
+            emit(sys.stderr, "ERROR", "payment_failed", order_id=order_id,
+                 reason="payment gateway timeout", attempt=1, failed_total=failed)
+        else:
+            processed += 1
+            emit(sys.stdout, "INFO", "order_shipped", order_id=order_id, product=product,
+                 processed_total=processed)
+        time.sleep(LOOP)
+    emit(sys.stdout, "INFO", "worker_stopped", processed_total=processed, failed_total=failed)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-worker
+  namespace: orders-demo
+  labels:
+    app: order-worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: order-worker
+  template:
+    metadata:
+      labels:
+        app: order-worker
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: worker
+          image: python:3.12-alpine
+          command: ["python", "-u", "/opt/worker/worker.py"]
+          env:
+            - name: POD_NAME
+              valueFrom: { fieldRef: { fieldPath: metadata.name } }
+            - name: LOOP_SECONDS
+              value: "2"
+            - name: ERROR_RATE
+              value: "0.1"
+            - name: WARN_RATE
+              value: "0.1"
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+            limits: { cpu: 100m, memory: 64Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - name: script
+              mountPath: /opt/worker
+              readOnly: true
+      volumes:
+        - name: script
+          configMap:
+            name: order-worker-script

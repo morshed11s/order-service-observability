@@ -1,0 +1,15 @@
+$ Loki labels
+["app","cluster","container","filename","job","level","namespace","node","pod","service_name","source","stream"]
+$ namespaces seen by Loki
+["default","kube-system","medicare-dev","monitoring","orders-demo"]
+$ last 10 ERROR lines: {namespace="orders-demo", stream="stderr"} |= "ERROR"
+2026-11-10T08:36:23Z order-worker-77864964f5-56hng {"ts": "2026-11-10T08:36:23Z", "level": "ERROR", "event": "payment_failed", "pod": "order-worker-77864964f5-56hng", "order_id": "dbd8046426", "reason": "payment gateway timeout", "attempt": 1, "failed_total": 44}
+2026-11-10T08:35:59Z order-worker-77864964f5-56hng {"ts": "2026-11-10T08:35:59Z", "level": "ERROR", "event": "payment_failed", "pod": "order-worker-77864964f5-56hng", "order_id": "6686c711f2", "reason": "payment gateway timeout", "attempt": 1, "failed_total": 43}
+2026-11-10T08:35:51Z order-worker-77864964f5-56hng {"ts": "2026-11-10T08:35:51Z", "level": "ERROR", "event": "payment_failed", "pod": "order-worker-77864964f5-56hng", "order_id": "a280822203", "reason": "payment gateway timeout", "attempt": 1, "failed_total": 42}
+2026-11-10T08:35:29Z order-worker-77864964f5-56hng {"ts": "2026-11-10T08:35:29Z", "level": "ERROR", "event": "payment_failed", "pod": "order-worker-77864964f5-56hng", "order_id": "caae310016", "reason": "payment gateway timeout", "attempt": 1, "failed_total": 41}
+2026-11-10T08:35:19Z order-worker-77864964f5-56hng {"ts": "2026-11-10T08:35:19Z", "level": "ERROR", "event": "payment_failed", "pod": "order-worker-77864964f5-56hng", "order_id": "65e1df28c7", "reason": "payment gateway timeout", "attempt": 1, "failed_total": 40}
+2026-11-10T08:36:23Z order-worker-77864964f5-vpdpv {"ts": "2026-11-10T08:36:23Z", "level": "ERROR", "event": "payment_failed", "pod": "order-worker-77864964f5-vpdpv", "order_id": "7177a4f0b1", "reason": "payment gateway timeout", "attempt": 1, "failed_total": 40}
+2026-11-10T08:36:19Z order-worker-77864964f5-vpdpv {"ts": "2026-11-10T08:36:19Z", "level": "ERROR", "event": "payment_failed", "pod": "order-worker-77864964f5-vpdpv", "order_id": "aafdc14acb", "reason": "payment gateway timeout", "attempt": 1, "failed_total": 39}
+2026-11-10T08:35:57Z order-worker-77864964f5-vpdpv {"ts": "2026-11-10T08:35:57Z", "level": "ERROR", "event": "payment_failed", "pod": "order-worker-77864964f5-vpdpv", "order_id": "a2bfeae15f", "reason": "payment gateway timeout", "attempt": 1, "failed_total": 38}
+2026-11-10T08:35:27Z order-worker-77864964f5-vpdpv {"ts": "2026-11-10T08:35:27Z", "level": "ERROR", "event": "payment_failed", "pod": "order-worker-77864964f5-vpdpv", "order_id": "6dd4f92b90", "reason": "payment gateway timeout", "attempt": 1, "failed_total": 37}
+2026-11-10T08:35:08Z order-worker-77864964f5-vpdpv {"ts": "2026-11-10T08:35:08Z", "level": "ERROR", "event": "payment_failed", "pod": "order-worker-77864964f5-vpdpv", "order_id": "294b3dcd7e", "reason": "payment gateway timeout", "attempt": 1, "failed_total": 36}

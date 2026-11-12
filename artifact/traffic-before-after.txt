@@ -1,0 +1,27 @@
+---- metrics BEFORE ----
+http_request_duration_seconds_count{endpoint="/health",method="GET"} 20.0
+http_requests_total{endpoint="/health",method="GET",status="200"} 20.0
+==> normal traffic: ~2 req/s for 60s against http://127.0.0.1:8000
+    HTTP 200 x 13
+    HTTP 201 x 108
+==> high traffic: ~25 req/s for 60s against http://127.0.0.1:8000
+    HTTP 200 x 101
+    HTTP 201 x 1019
+==> failure traffic: ~10 req/s for 60s against http://127.0.0.1:8000
+    HTTP 200 x 43
+    HTTP 201 x 290
+    HTTP 400 x 35
+    HTTP 500 x 136
+---- metrics AFTER ----
+http_request_duration_seconds_count{endpoint="/api/orders",method="POST"} 1588.0
+http_request_duration_seconds_count{endpoint="/health",method="GET"} 189.0
+http_requests_total{endpoint="/api/orders",method="POST",status="201"} 1417.0
+http_requests_total{endpoint="/api/orders",method="POST",status="400"} 35.0
+http_requests_total{endpoint="/api/orders",method="POST",status="500"} 136.0
+http_requests_total{endpoint="/health",method="GET",status="200"} 189.0
+orders_created_total{product="gadget"} 454.0
+orders_created_total{product="gizmo"} 471.0
+orders_created_total{product="widget"} 492.0
+orders_failed_total{reason="simulated_error"} 136.0
+orders_failed_total{reason="validation"} 35.0
+orders_value_usd_total 53197.32000000002
