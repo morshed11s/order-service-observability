@@ -297,11 +297,3 @@ docker compose start order-api    # a resolved email follows
 ./scripts/cleanup.sh --purge    # also delete the volumes and the locally built image
 # optional: sudo snap remove microk8s
 ```
-
-## Packaging for delivery
-
-```bash
-cd .. && zip -r 30245_observability.zip order-service-observability \
-  -x 'order-service-observability/.env' 'order-service-observability/**/.venv/*' 'order-service-observability/**/__pycache__/*' 'order-service-observability/.git/*'
-unzip -l 30245_observability.zip | grep -c '\.env$'   # must print 0 (only .env.example is allowed)
-```
