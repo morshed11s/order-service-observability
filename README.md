@@ -6,55 +6,86 @@ This project provides a local observability environment for a sample order-proce
 
 The stack covers three core observability workflows:
 
-| Workflow | Description |
-| --- | --- |
-| Metrics | Host and application telemetry are collected by Node Exporter and the Order API, then visualized in Grafana through Prometheus. |
-| Kubernetes logs | Application logs from `order-worker` pods running in MicroK8s are streamed to Loki via Grafana Alloy and queried with LogQL. |
-| Alerting | Grafana alert rules evaluate service health and send notifications through SMTP to an operational inbox. |
+| Workflow        | Description                                                                                                                     |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Metrics         | Host and application telemetry are collected by Node Exporter and the Order API, then visualized in Grafana through Prometheus. |
+| Kubernetes logs | Application logs from `order-worker` pods running in MicroK8s are streamed to Loki via Grafana Alloy and queried with LogQL.  |
+| Alerting        | Grafana alert rules evaluate service health and send notifications through SMTP to an operational inbox.                        |
 
 This is designed as a practical reference and demonstration environment for monitoring and alerting patterns, rather than a generic learning assignment.
 
+```text
+ Ubuntu host - all published ports bound to 127.0.0.1
+
+ +- Docker Compose - network "obs" (172.30.0.0/24) ---------------------------------------+
+ |                         scrape 15s                                                     |
+ |  +-------------------+               +--------------------+  PromQL                    |
+ |  | Order API  :8000  +-------------->| Prometheus  :9090  +--------------+             |
+ |  +-------------------+       +------>| metrics, 15 d      |              |             |
+ |                              |       +--------------------+              v             |
+ |  +-------------------+       |                                 +---------------------+ |
+ |  | Node Exporter     +-------+                                 | Grafana  :3000      | |
+ |  | 172.30.0.1:9100   |                                         | dashboards, alerts  | |
+ |  +-------------------+                                         +---------------+-----+ |
+ |                                      +--------------------+          ^         |       |
+ |                                      | Loki  :3100        +----------+         |       |
+ |                                      | logs, 7 d          |  LogQL             | SMTP  |
+ |                                      +--------------------+                    |       |
+ |                                                      ^                         |       |
+ +------------------------------------------------------+-------------------------+-------+
+                                                        | push to 127.0.0.1:3100  |
+ +- MicroK8s -------------------------------------------+--------+                v
+ |  ns orders-demo                      ns monitoring   |        |      +----------------+
+ |  +-------------------+               +---------------+----+   |      | SMTP server    |
+ |  | order-worker x2   +-------------->| Grafana Alloy      |   |      | alert inbox    |
+ |  | stdout + stderr   | /var/log/pods | DaemonSet          |   |      +----------------+
+ |  +-------------------+               +--------------------+   |
+ +---------------------------------------------------------------+
 ```
- Ubuntu laptop ──────────────────────────────────────────────────────────────────────────────
- │ Docker Compose (network "obs" 172.30.0.0/24)                MicroK8s (same host)          │
- │ ┌─────────────┐  scrape 15s  ┌────────────┐                ┌──────────────────────────┐  │
- │ │ order-api   │◀─────────────│ Prometheus │◀──┐            │ ns orders-demo           │  │
- │ │ :8000       │              │ :9090      │   │ PromQL     │  order-worker x2 (stdout/ │  │
- │ └─────────────┘              └────────────┘   │            │  stderr JSON logs)        │  │
- │ ┌─────────────┐  scrape 15s        ▲         ┌┴─────────┐  │          │ /var/log/pods  │  │
- │ │node-exporter│◀───────────────────┘         │ Grafana  │  │ ns monitoring ▼          │  │
- │ │host net/pid │ 172.30.0.1:9100              │ :3000    │──┼──▶ SMTP ──▶ test inbox    │  │
- │ └─────────────┘                              └┬─────────┘  │  Alloy DaemonSet          │  │
- │ ┌─────────────┐   LogQL                       │            │  (hostNetwork: true)      │  │
- │ │ Loki :3100  │◀──────────────────────────────┘            └──────────┬───────────────┘  │
- │ └─────────────┘◀──── push http://127.0.0.1:3100/loki/api/v1/push ─────┘                  │
- │   all published ports bound to 127.0.0.1                                                 │
- ─────────────────────────────────────────────────────────────────────────────────────────────
-```
+
+| Flow | Path |
+| ---- | ---- |
+| Metrics | Prometheus scrapes the Order API and Node Exporter every 15 s; Grafana queries it with PromQL. |
+| Logs | `order-worker` pods write to stdout/stderr; Alloy tails `/var/log/pods` and pushes to Loki on `127.0.0.1:3100`; Grafana queries it with LogQL. |
+| Alerts | Grafana evaluates the alert rules and sends notifications through SMTP to the test inbox. |
 
 ## Repository structure
 
 ```
-30245_observability/
-├── README.md                 this file: setup, verification, demo, cleanup
-├── compose.yaml              Prometheus, Grafana, Loki, Node Exporter, Order API
-├── .env.example              template for secrets (copy to .env, which is git-ignored)
-├── app/                      Order API (Flask + prometheus_client), Dockerfile, pytest tests
-├── prometheus/prometheus.yml scrape jobs: node-exporter, order-api, prometheus
-├── loki/config.yml           single-binary Loki, filesystem storage, 7-day retention
+order-service-observability/
+├── README.md                     this file: setup, verification, demo, cleanup
+├── compose.yaml                  Prometheus, Grafana, Loki, Node Exporter, Order API
+├── .env.example                  template for secrets (copy to .env, which is git-ignored)
+├── .gitignore / .gitattributes
+├── app/
+│   ├── app.py                    Order API (Flask + prometheus_client)
+│   ├── Dockerfile, .dockerignore
+│   ├── requirements.txt, requirements-dev.txt
+│   └── tests/test_app.py         pytest tests
+├── prometheus/prometheus.yml     scrape jobs: node-exporter, order-api, prometheus
+├── loki/config.yml               single-binary Loki, filesystem storage, 7-day retention
 ├── kubernetes/
-│   ├── namespace.yaml        orders-demo + monitoring
-│   ├── workload.yaml         order-worker Deployment (+ ConfigMap with the worker script)
-│   └── alloy-values.yaml     Helm values: Alloy DaemonSet, pod log discovery, push to Loki
+│   ├── namespace.yaml            orders-demo + monitoring
+│   ├── workload.yaml             order-worker Deployment (+ ConfigMap with the worker script)
+│   └── alloy-values.yaml         Helm values: Alloy DaemonSet, pod log discovery, push to Loki
 ├── grafana/
-│   ├── provisioning/         data sources, dashboard provider, alerting (contact point/policy/rules)
-│   └── dashboards/           exported dashboard JSON (metrics + Kubernetes logs)
+│   ├── provisioning/
+│   │   ├── datasources/datasources.yaml
+│   │   ├── dashboards/dashboards.yaml
+│   │   └── alerting/             contact-points.yaml, policies.yaml, rules.yaml
+│   └── dashboards/               observability-metrics.json, kubernetes-logs.json
 ├── alerting/configuration-notes.md   SMTP, threshold, evaluation, recipient, operator action
-├── docs/architecture.md      what every file does, how they connect, how the Order API works
-├── docs/demo-runbook.md      live demo script: every command in order, from a clean start
-├── docs/promql.md            the five PromQL expressions explained + host cross-checks
-├── scripts/                  setup, deploy, traffic, error test, PromQL checks, artifacts, cleanup
-└── artifact/                 text artifacts (generated) + screenshots (taken during the demo)
+├── scripts/
+│   ├── setup-ubuntu.sh           install Docker, MicroK8s, helm3, jq
+│   ├── deploy-k8s.sh             deploy order-worker and Alloy to MicroK8s
+│   ├── wait-ready.sh             wait until the stack (and optionally k8s) is ready
+│   ├── traffic-test.sh           normal / high / failure / slow / demo traffic
+│   ├── k8s-error-test.sh         raise / reset the worker's error rate
+│   ├── promql-checks.sh          the five PromQL expressions + free/df/uptime cross-checks
+│   ├── collect-artifact.sh       write text artifacts into artifact/
+│   └── cleanup.sh                tear everything down
+└── artifact/                     text artifacts (generated) + screenshots (taken during the demo),
+                                  see artifact/README.md
 ```
 
 ## Prerequisites
@@ -62,7 +93,7 @@ This is designed as a practical reference and demonstration environment for moni
 Requirements: Ubuntu 26.04, at least 4 vCPU and 8 GB RAM, internet access to pull images.
 
 ```bash
-git clone <repo-url> 30245_observability && cd 30245_observability   # or unzip the archive
+git clone <repo-url> order-service-observability && cd order-service-observability   # or unzip the archive
 chmod +x scripts/*.sh
 ./scripts/setup-ubuntu.sh          # Docker Engine + Compose plugin, MicroK8s, dns + helm3 add-ons, jq
 newgrp docker; newgrp microk8s     # or log out and back in
@@ -158,7 +189,7 @@ cd app && python3 -m venv .venv && . .venv/bin/activate && pip install -r requir
 * Scrape jobs: `node-exporter` (172.30.0.1:9100), `order-api` (order-api:8000) and `prometheus`, every **15 s**.
 * Run `./scripts/promql-checks.sh`. It prints the target health, the five required expressions, and the
   `free`, `df` and `uptime` cross-checks.
-* Each expression is explained in [docs/promql.md](docs/promql.md).
+* The expressions are in [scripts/promql-checks.sh](scripts/promql-checks.sh).
 
 ## Kubernetes workloads and log collection
 
@@ -270,7 +301,7 @@ docker compose start order-api    # a resolved email follows
 ## Packaging for delivery
 
 ```bash
-cd .. && zip -r 30245_observability.zip 30245_observability \
-  -x '30245_observability/.env' '30245_observability/**/.venv/*' '30245_observability/**/__pycache__/*' '30245_observability/.git/*'
+cd .. && zip -r 30245_observability.zip order-service-observability \
+  -x 'order-service-observability/.env' 'order-service-observability/**/.venv/*' 'order-service-observability/**/__pycache__/*' 'order-service-observability/.git/*'
 unzip -l 30245_observability.zip | grep -c '\.env$'   # must print 0 (only .env.example is allowed)
 ```

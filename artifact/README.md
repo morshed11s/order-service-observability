@@ -21,4 +21,5 @@ Before you save any screenshot, **blur or crop out** passwords, SMTP credentials
 | `alert-firing.png` | 7 | Alerting → Alert rules: 2 provisioned rules, 1 firing |
 | `alert-rule-detail.png` | 7 | *Order API scrape target down* = Firing: query `sum(up{job="order-api"}) or vector(0)` = 0, evaluated every 30s |
 | `email-alert.png` | 7 | the received email (subject and timestamp visible, recipient blurred) |
+| `resolved-email.png` | 7 | the resolved email after `docker compose start order-api` |
 | `persistence-after-restart.png` | 2 | the dashboard still shows earlier data after `docker compose restart` |
